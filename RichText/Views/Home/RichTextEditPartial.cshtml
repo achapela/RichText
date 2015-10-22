@@ -1,0 +1,97 @@
+﻿<script type="text/javascript">
+	function OnCustomCommandExecuted(s, e) {
+		//if (e.commandName == "Vars") {
+			InsertVariable(e.commandName);
+		//}
+	}
+
+	function drag(ev) {
+
+	}
+
+	function drop(ev) {
+
+	}
+	function allowDrop(ev) {
+
+	}
+
+	function OnAddClick(s, e) {
+		var text = listbox.GetSelectedItem().text;
+		InsertVariable(text);
+	}
+	function InsertVariable(text){
+		var manager = RichEdit.core.commandManager;
+		manager.getCommand(__aspxRichEdit.RichEditClientCommand.CreateField).execute();
+		manager.getCommand(__aspxRichEdit.RichEditClientCommand.InsertText).execute("DOCVARIABLE " + text);
+		manager.getCommand(__aspxRichEdit.RichEditClientCommand.UpdateAllFields).execute();
+	}
+</script>
+@*<div>
+		<img src=" ~/Content/img_w3slogo.gif" draggable="true" ondragstart="drag(event)" />
+	</div>*@
+@Html.DevExpress().ListBox(settings =>
+{
+	settings.Name = "listbox";
+	settings.Properties.SelectionMode = ListEditSelectionMode.Single;
+	settings.Properties.Items.Add("Direct Cost").Selected = true;
+	settings.Properties.Items.Add("Hours");
+	settings.Properties.Items.Add("Name");
+}).GetHtml()
+
+@Html.DevExpress().Button(settings =>
+{
+	settings.Name = "Add";
+	settings.Text = "Add Variable";
+	settings.ClientSideEvents.Click = "OnAddClick";
+}).GetHtml()
+<br />
+<br />
+@Html.DevExpress().RichEdit(settings =>
+{
+	settings.Name = "RichEdit";
+	settings.CallbackRouteValues = new
+	{
+		Controller = "Home",
+		Action = "RichTextEditPartial"
+	};
+	settings.WorkDirectory = Path.Combine(Context.Request.MapPath("~/App_Data/"), "Documents/");
+	settings.CalculateDocumentVariable = (s, e) =>
+	{
+		switch (e.VariableName)
+		{
+			case "Hours":
+				e.Value = "one";
+				e.Handled = true;
+				break;
+			default: break;
+		}
+	};
+	settings.RibbonMode = RichEditRibbonMode.Ribbon;
+	settings.Init = (s, e) =>
+	{
+		var re = s as MVCxRichEdit;
+
+		re.CreateDefaultRibbonTabs(false);
+		re.RibbonTabs.Add("Variables");
+		var varTab = re.RibbonTabs[re.RibbonTabs.Count - 1];
+		varTab.Groups.Add("Vars & Stuff");
+		var group = varTab.Groups[0];
+		var item = new RibbonButtonItem("DirectCost", "Direct Cost");
+		item.ClientEnabled = true;
+		group.Items.Add(item);
+		item = new RibbonButtonItem("Hours", "Hours");
+		item.ClientEnabled = true;
+		group.Items.Add(item);
+		item = new RibbonButtonItem("Name", "Name");
+		item.ClientEnabled = true;
+		group.Items.Add(item);
+		re.ClientSideEvents.SetEventHandler("ondragover", "function(s,e){ alert(s.name); }");
+	};
+	settings.Settings.Behavior.Drop = DocumentCapability.Enabled;
+	settings.Settings.Behavior.Drag = DocumentCapability.Enabled;
+	settings.EnableClientSideAPI = true;
+	settings.ClientSideEvents.CustomCommandExecuted = "OnCustomCommandExecuted";
+	//settings.ClientSideEvents.SetEventHandler("ondragover", "function(s,e){ alert(s.name);}");
+	//settings.ClientSideEvents.SetEventHandler("ondrop", "drop");
+}).GetHtml()
